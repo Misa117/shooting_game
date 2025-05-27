@@ -1,35 +1,39 @@
 import pygame
-import os
 from bullet import Bullet
+from romaji_map import kana_to_romaji
+from explosion import Explosion  # 爆発追加
 
 class Player:
     def __init__(self, x, y):
-        # プレイヤー画像を読み込む（透過対応）
-        self.image = pygame.image.load(os.path.join("assets", "images", "player.png")).convert_alpha()
+        self.image = pygame.image.load("assets/images/player.png").convert_alpha()
+        self.image = pygame.transform.scale(self.image, (50, 50))
         self.rect = self.image.get_rect(topleft=(x, y))
         self.speed = 5
         self.bullets = []
+        self.current_input = ""  # ローマ字の累積入力
 
-    def handle_input(self):
-        keys = pygame.key.get_pressed()
-        if keys[pygame.K_LEFT]:
-            self.rect.x -= self.speed
-            if self.rect.left < 0:
-                self.rect.left = 0
-        if keys[pygame.K_RIGHT]:
-            self.rect.x += self.speed
-            if self.rect.right > 800:  # 画面幅800想定
-                self.rect.right = 800
-        if keys[pygame.K_SPACE]:
-            # 発射制限：同時に5発まで
-            if len(self.bullets) < 5:
-                # 弾はプレイヤーの中央上から発射
-                bullet_x = self.rect.centerx
-                bullet_y = self.rect.top
-                self.bullets.append(Bullet(bullet_x, bullet_y))
+    def handle_typing_input(self, char, enemies, explosions, add_score_callback):
+        self.current_input += char
 
-    def update(self):
-        self.handle_input()
+        matched_enemy = None
+        for enemy in enemies:
+            if enemy.romaji.startswith(self.current_input):
+                matched_enemy = enemy
+                enemy.input_index = len(self.current_input)
+                break
+
+        if matched_enemy:
+            if self.current_input == matched_enemy.romaji:
+                explosions.append(Explosion(matched_enemy.rect.centerx, matched_enemy.rect.centery))
+                add_score_callback(matched_enemy.points)
+                enemies.remove(matched_enemy)
+                self.current_input = ''
+        else:
+            self.current_input = ''
+            for enemy in enemies:
+                enemy.input_index = 0
+
+    def update(self, enemies):
         for bullet in self.bullets[:]:
             bullet.update()
             if bullet.rect.bottom < 0:
@@ -39,3 +43,23 @@ class Player:
         screen.blit(self.image, self.rect)
         for bullet in self.bullets:
             bullet.draw(screen)
+
+    def create_beam(self, x, y):
+        return Bullet(x, y)
+    
+
+    def move(self, dx, dy):
+        self.rect.x += dx
+        self.rect.y += dy
+        # 画面外に出ないよう制限
+        if self.rect.left < 0:
+            self.rect.left = 0
+        if self.rect.right > 800:  # 画面サイズに合わせて調整
+            self.rect.right = 800
+
+
+    # def move(self, dx, dy):
+    #     self.rect.x += dx
+    #     self.rect.y += dy
+    #     self.rect.x = max(0, min(self.rect.x, 800 - self.rect.width))
+    #     self.rect.y = max(0, min(self.rect.y, 600 - self.rect.height))

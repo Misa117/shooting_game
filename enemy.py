@@ -1,31 +1,69 @@
 import pygame
-import random
 import os
+import random
+from romaji_map import kana_to_romaji
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 class Enemy:
-    _images = None  # クラス変数として画像リストを保持（初期はNone）
+    HIRAGANA_WORDS_2 = ['いぬ', 'ねこ', 'さけ', 'くま', 'はな', 'みず', 'かぜ', 'そら']
+    HIRAGANA_WORDS_3 = [
+        'うどん', 'ひらめ', 'こたつ', 'ごりら', 'いちご', 'さくら', 'すいか',
+        'たまご', 'はなび', 'まくら', 'らっぱ', 'わらび', 'あさひ', 'いなほ'
+    ]
 
-    @classmethod
-    def load_images(cls):
-        if cls._images is None:
-            cls._images = [
-                pygame.image.load(os.path.join(BASE_DIR, "assets", "images", f"enemy{i}.png")).convert_alpha()
-                for i in range(1, 5)
-            ]
+    def __init__(self, enemy_type, screen_width, screen_height):
+        self.type = enemy_type
+        self.screen_width = screen_width
+        self.screen_height = screen_height
 
-    def __init__(self):
-        # 画像が読み込まれてなければ読み込む
-        self.load_images()
-        self.image = random.choice(self._images)
+        # 表示用のひらがな
+        if enemy_type in [1, 2]:
+            self.text = random.choice(Enemy.HIRAGANA_WORDS_2)
+            self.points = 2
+        elif enemy_type in [3, 4]:
+            self.text = random.choice(Enemy.HIRAGANA_WORDS_3)
+            self.points = 5
+        else:
+            self.text = "？？"
+            self.points = 1
+
+        # 入力＆判定用のローマ字に変換
+        self.romaji = kana_to_romaji(self.text)
+
+        # タイピング進捗管理
+        self.input_index = 0
+
+        # 画像と初期位置設定
+        image_path = os.path.join(BASE_DIR, "assets", "images", f"enemy{enemy_type}.png")
+        self.image = pygame.image.load(image_path).convert_alpha()
+        self.image = pygame.transform.scale(self.image, (80, 80))
         self.rect = self.image.get_rect()
-        self.rect.x = random.randint(0, 750)
-        self.rect.y = -50
-        self.speed = random.uniform(1.5, 4.0)
+        self.rect.x = random.randint(0, max(0, screen_width - self.rect.width))
+        self.rect.y = -self.rect.height
 
-    def update(self):
-        self.rect.y += self.speed
-
-    def draw(self, screen):
+    def draw(self, screen, font):
         screen.blit(self.image, self.rect)
+
+        # 文字の縁取り描画
+        center = self.rect.center
+        text_color = (255, 255, 0)
+        outline_color = (0, 0, 0)
+        outline_thickness = 2
+        offsets = [(-outline_thickness, -outline_thickness), (-outline_thickness, 0),
+                   (-outline_thickness, outline_thickness), (0, -outline_thickness),
+                   (0, outline_thickness), (outline_thickness, -outline_thickness),
+                   (outline_thickness, 0), (outline_thickness, outline_thickness)]
+
+        for ox, oy in offsets:
+            outline_surf = font.render(self.text, True, outline_color)
+            outline_rect = outline_surf.get_rect(center=(center[0] + ox, center[1] + oy))
+            screen.blit(outline_surf, outline_rect)
+
+        # 本体のテキスト
+        text_surf = font.render(self.text, True, text_color)
+        text_rect = text_surf.get_rect(center=center)
+        screen.blit(text_surf, text_rect)
+
+    def update(self, speed):
+        self.rect.y += speed
