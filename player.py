@@ -3,10 +3,12 @@ from bullet import Bullet
 from romaji_map import kana_to_romaji
 from explosion import Explosion  # 爆発追加
 
+
+
 class Player:
     def __init__(self, x, y):
         self.image = pygame.image.load("assets/images/player.png").convert_alpha()
-        self.image = pygame.transform.scale(self.image, (50, 50))
+        self.image = pygame.transform.scale(self.image, (60, 60))
         self.rect = self.image.get_rect(topleft=(x, y))
         self.speed = 5
         self.bullets = []

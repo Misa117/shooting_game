@@ -7,11 +7,17 @@ from explosion import Explosion
 from player import Player
 from enemy import Enemy
 
+K8X12_FONT_PATH = os.path.join(os.path.dirname(__file__), "k8x12.ttf")
+NOTO_FONT_PATH = os.path.join(os.path.dirname(__file__), "NotoSansJP.ttf")
 
 class Game:
     def __init__(self, screen):
         self.screen = screen
-        self.font = pygame.font.SysFont("meiryo", 20)
+        self.font = pygame.font.Font(K8X12_FONT_PATH, 30)
+        self.noto_font = pygame.font.Font(NOTO_FONT_PATH, 34)
+        self.noto_font.set_bold(True)
+
+
         self.score = 0
         self.player = Player(375, 500)
         self.enemies = []
@@ -25,7 +31,6 @@ class Game:
         self.fever_duration = 10000  # ミリ秒（10秒）
         self.saved_player_pos = None
         self.fever_used = False  # フィーバー再発動制限用フラグ
-
         self.stars = [Star(screen.get_width(), screen.get_height()) for _ in range(100)]
         self.spawn_timer = 0  # 敵スポーンのタイマー
         self.game_over = False
@@ -180,9 +185,15 @@ class Game:
                 if not explosion.update():
                     self.explosions.remove(explosion)
 
-
     def draw(self):
-        self.screen.fill((0, 0, 0))  # 画面クリア
+        self.screen.fill((0, 0, 0))  # 通常時は黒
+
+            # フィーバーモード中は星の速度を8倍に
+        speed_mult = 8 if self.fever_mode else 1
+
+        for star in self.stars:
+            star.update(speed_mult)
+            star.draw(self.screen)
 
         for star in self.stars:
             star.draw(self.screen)
@@ -198,28 +209,52 @@ class Game:
         for explosion in self.explosions:
             explosion.draw(self.screen)
 
+        # スコア表示（k8x12.ttf）
         score_text = self.font.render(f"Score: {self.score}", True, (255, 255, 0))
         self.screen.blit(score_text, (10, 10))
 
+        # ホームテキスト表示（k8x12.ttf）
         home_text = self.font.render("ホーム", True, (0, 255, 255))
         self.screen.blit(home_text, (700, 10))
 
-        # 入力中の文字列を画面中央上に表示
-        input_display = self.font.render(f"入力文字: {self.player.current_input}", True, (255, 255, 255))
-        input_rect = input_display.get_rect(center=(self.screen.get_width() // 2, 50))
-        self.screen.blit(input_display, input_rect)
+        # ★ 白背景の矩形を画面幅いっぱいに描画（高さはテキストの高さに合わせて少し余裕を持たせる）
+        background_height = 50
+        background_rect = pygame.Rect(0, self.screen.get_height() - background_height, self.screen.get_width(), background_height)
+        pygame.draw.rect(self.screen, (255, 255, 255), background_rect)
 
-        # フィーバーモードか通常入力中かを表示
+        # ★ テキストを左寄せで表示（左端に10pxの余白、縦は白背景の中央あたり）
+        input_text = f"入力文字：{self.player.current_input}"
+        input_surface = self.noto_font.render(input_text, True, (0, 0, 0))  # 黒文字、背景なし
+        input_rect = input_surface.get_rect()
+        input_rect.topleft = (10, self.screen.get_height() - background_height + (background_height - input_surface.get_height()) // 2)
+        self.screen.blit(input_surface, input_rect)
+
+        # ★ 「落ちた数」カウントを白背景の上あたり、右下に配置
+        down_text = self.font.render(f"落ちた数: {self.down_count}/20", True, (255, 100, 100))
+        down_rect = down_text.get_rect()
+        # 画面右端から10px内側、白背景の上（10px上）に配置
+        down_rect.bottomright = (self.screen.get_width() - 10, self.screen.get_height() - background_height - 10)
+        self.screen.blit(down_text, down_rect)
+
+        # フィーバーモードか通常入力中かを表示（k8x12.ttf）
         if self.fever_mode:
-            fever_text = self.font.render("フィーバーモード！ 十字キーでビーム発射！", True, (255, 0, 0))
-            fever_rect = fever_text.get_rect(center=(self.screen.get_width() // 2, 80))
-            self.screen.blit(fever_text, fever_rect)
-        else:
-            input_status_text = self.font.render("入力中...", True, (255, 255, 255))
-            input_status_rect = input_status_text.get_rect(center=(self.screen.get_width() // 2, 80))
-            self.screen.blit(input_status_text, input_status_rect)
+            # 点滅のオンオフ（500msごとに切り替え）
+            if self.fever_mode:
+                if (pygame.time.get_ticks() // 500) % 2 == 0:  # 0.5秒ごとに点滅
+                    fever_text = self.font.render("フィーバーモード！ 十字キーでビーム発射！", True, (255, 0, 0))
+                    fever_rect = fever_text.get_rect(center=(self.screen.get_width() // 2, 120))
+                    self.screen.blit(fever_text, fever_rect)
+            else:
+                input_status_text = self.font.render("エイリアンを倒せ…！", True, (255, 255, 255))
+                input_status_rect = input_status_text.get_rect(center=(self.screen.get_width() // 2, 80))
+                self.screen.blit(input_status_text, input_status_rect)
 
+        # # 宇宙人が落ちていった数カウント（k8x12.ttf）
+        # down_text = self.font.render(f"落ちた数: {self.down_count}/20", True, (255, 100, 100))
+        # down_rect = down_text.get_rect(bottomright=(self.screen.get_width() - 10, self.screen.get_height() - 10))
+        # self.screen.blit(down_text, down_rect)
 
+        # ルール説明やゲームオーバー画面（k8x12.ttf）
         if self.state == 'home':
             lines = [
                 "【ルール説明】",
@@ -245,7 +280,6 @@ class Game:
                 self.screen.get_width() // 2 - score_text.get_width() // 2,
                 self.screen.get_height() // 2 - score_text.get_height() // 2 + 30
             ))
-
 
     def add_score(self, points):
         self.score += points

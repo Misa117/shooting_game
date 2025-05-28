@@ -6,10 +6,10 @@ from romaji_map import kana_to_romaji
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 class Enemy:
-    HIRAGANA_WORDS_2 = ['いぬ', 'ねこ', 'さけ', 'くま', 'はな', 'みず', 'かぜ', 'そら']
+    HIRAGANA_WORDS_2 = ['いぬ', 'ねこ', 'りす', 'あり', 'くき', 'さけ', 'くま', 'はな', 'たこ', 'みず', 'かぜ', 'そら']
     HIRAGANA_WORDS_3 = [
-        'うどん', 'ひらめ', 'こたつ', 'ごりら', 'いちご', 'さくら', 'すいか',
-        'たまご', 'はなび', 'まくら', 'らっぱ', 'わらび', 'あさひ', 'いなほ'
+        'うどん', 'ひらめ', 'あずき', 'こたつ', 'ごりら', 'いちご', 'さくら', 'すいか', 'りゅう', 'みかん', 'らっこ',
+        'たまご', 'はなび', 'まくら', 'らっぱ', 'わらび', 'あさひ', 'くるま'
     ]
 
     def __init__(self, enemy_type, screen_width, screen_height):
