@@ -5,9 +5,14 @@ from game import Game
 import os
 
 pygame.mixer.init()
+pygame.mixer.init()  # ミキサーの初期化（必須）
 shot_sound = pygame.mixer.Sound("assets/sounds/shot.wav")
 explosion_sound = pygame.mixer.Sound("assets/sounds/shotlong.wav")
 type_sound = pygame.mixer.Sound("assets/sounds/type.wav")
+pygame.mixer.music.load("assets/sounds/bgm.mp3")  # 任意のBGMファイル
+pygame.mixer.music.set_volume(0.5)  # 音量（0.0～1.0）
+pygame.mixer.music.play(-1)  # -1 = 無限ループで再生
+
 SCORES_FILE = "scores.json"
 FONT_PATH = os.path.join(os.path.dirname(__file__), "k8x12.ttf")
 
