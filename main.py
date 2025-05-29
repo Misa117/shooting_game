@@ -4,6 +4,10 @@ from datetime import datetime
 from game import Game
 import os
 
+pygame.mixer.init()
+shot_sound = pygame.mixer.Sound("assets/sounds/shot.wav")
+explosion_sound = pygame.mixer.Sound("assets/sounds/shotlong.wav")
+type_sound = pygame.mixer.Sound("assets/sounds/type.wav")
 SCORES_FILE = "scores.json"
 FONT_PATH = os.path.join(os.path.dirname(__file__), "k8x12.ttf")
 
@@ -54,11 +58,15 @@ def main():
     pygame.display.set_caption("シューティングゲーム")
     clock = pygame.time.Clock()
 
+    # フォント読み込み
     if os.path.exists(FONT_PATH):
         font = pygame.font.Font(FONT_PATH, 35)
     else:
         print("⚠ フォントが見つかりません。k8x12.ttf をプロジェクトフォルダに置いてください。")
         return
+
+    # 効果音の読み込み
+    type_sound = pygame.mixer.Sound("assets/sounds/type.wav")
 
     state = 'home'
     input_name = ""
@@ -79,20 +87,24 @@ def main():
                         input_name = input_name[:-1]
                     elif event.key in [pygame.K_RETURN, pygame.K_SPACE]:
                         if input_name.strip() != "":
+                            type_sound.play()
                             state = 'rules'
                     else:
                         if len(input_name) < 10:
                             input_name += event.unicode
                 elif state == 'rules':
                     if event.key == pygame.K_SPACE:
+                        type_sound.play()
                         game = Game(screen)
                         state = 'playing'
                 elif state == 'result':
                     if event.key == pygame.K_SPACE:
+                        type_sound.play()
                         state = 'home'
                         input_name = ""
                         score = 0
                         game = None
+
 
         screen.fill((0, 0, 0))
 
@@ -134,15 +146,16 @@ def main():
                 state = 'result'
 
         elif state == 'result':
-            draw_text(screen, f"ゲーム終了！ {input_name} さんの今回の撃退報酬…　（{score}）", 50, 50, font)
+            draw_text(screen, f"ゲーム終了！ {input_name} さんの今回の撃退point…　（{score}）", 50, 50, font)
             draw_text(screen, "みんなの成績:", 50, 100, font)
             scores = load_scores()
             for i, s in enumerate(scores[:10]):
-                text = f"{i+1}. {s['name']} - {s['score']}￥ ({s['date']})"
+                text = f"{i+1}. {s['name']} - {s['score']}P ({s['date']})"
                 draw_text(screen, text, 50, 130 + i * 30, font)
             draw_text(screen, "Spaceキーでホームに戻る", 50, 500, font)
 
         pygame.display.flip()
+
 
 if __name__ == "__main__":
     main()

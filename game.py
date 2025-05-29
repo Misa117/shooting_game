@@ -17,6 +17,9 @@ class Game:
         self.noto_font = pygame.font.Font(NOTO_FONT_PATH, 34)
         self.noto_font.set_bold(True)
 
+        self.shot_sound = pygame.mixer.Sound("assets/sounds/shot.wav")
+        self.explosion_sound =  pygame.mixer.Sound("assets/sounds/shotlong.wav")
+        self.is_long_shot_playing = False
 
         self.score = 0
         self.player = Player(375, 500)
@@ -104,11 +107,6 @@ class Game:
 
             # 敵スポーンのタイマー更新
             self.spawn_timer += dt
-            # if self.spawn_timer > 2000:  # 2秒ごとに敵を出現させる
-            #     enemy_type = random.choice([1, 2, 3, 4])
-            #     self.enemies.append(Enemy(enemy_type, self.screen.get_width(), self.screen.get_height()))
-            #     self.spawn_timer = 0
-            # スコアに応じて敵の出現間隔を短縮（最小500ms）
             spawn_interval = max(500, 2000 - self.score * 10)
 
             if self.spawn_timer > spawn_interval:
@@ -156,7 +154,6 @@ class Game:
                     self.player.rect.topleft = (375, 500)
 
 
-            # 弾と敵の当たり判定
             for bullet in self.player.bullets[:]:
                 for enemy in self.enemies[:]:
                     if bullet.rect.colliderect(enemy.rect):
@@ -165,20 +162,25 @@ class Game:
                             self.explosions.append(Explosion(enemy.rect.centerx, enemy.rect.centery))
                             self.enemies.remove(enemy)
                             self.player.bullets.remove(bullet)
+                            self.shot_sound.play()
                             break
-                        elif 0 <= enemy.input_index < len(enemy.text):
+                        elif 0 <= enemy.input_index < len(enemy.romaji):
                             expected_char = enemy.romaji[enemy.input_index].lower()
                             if bullet.key == expected_char:
                                 enemy.input_index += 1
+                                self.player.bullets.remove(bullet)
+
+                                # 文字列をすべて入力したら撃破
                                 if enemy.input_index >= len(enemy.romaji):
                                     self.score += enemy.points
                                     self.explosions.append(Explosion(enemy.rect.centerx, enemy.rect.centery))
                                     self.enemies.remove(enemy)
-                                self.player.bullets.remove(bullet)
+                                    self.shot_sound.play()
                                 break
                         else:
                             self.player.bullets.remove(bullet)
                             break
+
 
             # 爆発アニメーション更新
             for explosion in self.explosions[:]:
@@ -239,20 +241,14 @@ class Game:
         # フィーバーモードか通常入力中かを表示（k8x12.ttf）
         if self.fever_mode:
             # 点滅のオンオフ（500msごとに切り替え）
-            if self.fever_mode:
-                if (pygame.time.get_ticks() // 500) % 2 == 0:  # 0.5秒ごとに点滅
-                    fever_text = self.font.render("フィーバーモード！ 十字キーでビーム発射！", True, (255, 0, 0))
-                    fever_rect = fever_text.get_rect(center=(self.screen.get_width() // 2, 120))
-                    self.screen.blit(fever_text, fever_rect)
-            else:
-                input_status_text = self.font.render("エイリアンを倒せ…！", True, (255, 255, 255))
-                input_status_rect = input_status_text.get_rect(center=(self.screen.get_width() // 2, 80))
-                self.screen.blit(input_status_text, input_status_rect)
-
-        # # 宇宙人が落ちていった数カウント（k8x12.ttf）
-        # down_text = self.font.render(f"落ちた数: {self.down_count}/20", True, (255, 100, 100))
-        # down_rect = down_text.get_rect(bottomright=(self.screen.get_width() - 10, self.screen.get_height() - 10))
-        # self.screen.blit(down_text, down_rect)
+            if (pygame.time.get_ticks() // 500) % 2 == 0:
+                fever_text = self.font.render("フィーバーモード！ 十字キーでビーム発射！", True, (255, 0, 0))
+                fever_rect = fever_text.get_rect(center=(self.screen.get_width() // 2, 120))
+                self.screen.blit(fever_text, fever_rect)
+        else:
+            input_status_text = self.font.render("エイリアンを倒せ…！", True, (255, 255, 255))
+            input_status_rect = input_status_text.get_rect(center=(self.screen.get_width() // 2, 80))
+            self.screen.blit(input_status_text, input_status_rect)
 
         # ルール説明やゲームオーバー画面（k8x12.ttf）
         if self.state == 'home':

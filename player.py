@@ -8,6 +8,7 @@ from explosion import Explosion  # 爆発追加
 class Player:
     def __init__(self, x, y):
         self.image = pygame.image.load("assets/images/player.png").convert_alpha()
+        self.shot_sound = pygame.mixer.Sound("assets/sounds/shot.wav")
         self.image = pygame.transform.scale(self.image, (60, 60))
         self.rect = self.image.get_rect(topleft=(x, y))
         self.speed = 5
@@ -30,6 +31,9 @@ class Player:
                 add_score_callback(matched_enemy.points)
                 enemies.remove(matched_enemy)
                 self.current_input = ''
+                if self.shot_sound:
+                    self.shot_sound.play()
+                
         else:
             self.current_input = ''
             for enemy in enemies:
