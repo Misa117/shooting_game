@@ -16,6 +16,7 @@ pygame.mixer.music.play(-1)  # -1 = 無限ループで再生
 SCORES_FILE = "scores.json"
 FONT_PATH = os.path.join(os.path.dirname(__file__), "k8x12.ttf")
 
+
 def save_score(name, score):
     try:
         with open(SCORES_FILE, "r", encoding="utf-8") as f:

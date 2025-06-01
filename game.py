@@ -7,6 +7,8 @@ from explosion import Explosion
 from player import Player
 from enemy import Enemy
 
+
+
 K8X12_FONT_PATH = os.path.join(os.path.dirname(__file__), "k8x12.ttf")
 NOTO_FONT_PATH = os.path.join(os.path.dirname(__file__), "NotoSansJP.ttf")
 
