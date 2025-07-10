@@ -5,25 +5,29 @@ from game import Game
 import os
 
 pygame.mixer.init()
-pygame.mixer.init()  # ミキサーの初期化（必須）
 shot_sound = pygame.mixer.Sound("assets/sounds/shot.wav")
 explosion_sound = pygame.mixer.Sound("assets/sounds/shotlong.wav")
 type_sound = pygame.mixer.Sound("assets/sounds/type.wav")
-pygame.mixer.music.load("assets/sounds/bgm.mp3")  # 任意のBGMファイル
-pygame.mixer.music.set_volume(0.5)  # 音量（0.0～1.0）
-pygame.mixer.music.play(-1)  # -1 = 無限ループで再生
+pygame.mixer.music.load("assets/sounds/bgm.mp3")
+pygame.mixer.music.set_volume(0.5)
+pygame.mixer.music.play(-1)
 
 SCORES_FILE = "scores.json"
 FONT_PATH = os.path.join(os.path.dirname(__file__), "k8x12.ttf")
 
-
-def save_score(name, score):
+def load_scores():
     try:
         with open(SCORES_FILE, "r", encoding="utf-8") as f:
-            scores = json.load(f)
-    except FileNotFoundError:
-        scores = []
+            data = json.load(f)
+            if not isinstance(data, list):
+                print("⚠ scores.json の形式が不正です。初期化します。")
+                return []
+            return [s for s in data if isinstance(s, dict) and "name" in s and "score" in s and "date" in s]
+    except (FileNotFoundError, json.JSONDecodeError):
+        return []
 
+def save_score(name, score):
+    scores = load_scores()
     existing = next((s for s in scores if s["name"] == name), None)
 
     if existing:
@@ -38,16 +42,8 @@ def save_score(name, score):
         })
 
     scores = sorted(scores, key=lambda x: x["score"], reverse=True)
-
     with open(SCORES_FILE, "w", encoding="utf-8") as f:
         json.dump(scores, f, ensure_ascii=False, indent=2)
-
-def load_scores():
-    try:
-        with open(SCORES_FILE, "r", encoding="utf-8") as f:
-            return json.load(f)
-    except FileNotFoundError:
-        return []
 
 def draw_text(screen, text, x, y, font, color=(255, 255, 255), center=False):
     surface = font.render(text, True, color)
@@ -64,15 +60,11 @@ def main():
     pygame.display.set_caption("シューティングゲーム")
     clock = pygame.time.Clock()
 
-    # フォント読み込み
     if os.path.exists(FONT_PATH):
         font = pygame.font.Font(FONT_PATH, 35)
     else:
         print("⚠ フォントが見つかりません。k8x12.ttf をプロジェクトフォルダに置いてください。")
         return
-
-    # 効果音の読み込み
-    type_sound = pygame.mixer.Sound("assets/sounds/type.wav")
 
     state = 'home'
     input_name = ""
@@ -111,7 +103,6 @@ def main():
                         score = 0
                         game = None
 
-
         screen.fill((0, 0, 0))
 
         if state == 'home':
@@ -133,11 +124,11 @@ def main():
                 "敵に表示されたひらがな3文字を正確にタイプして撃破！",
                 "スコア50以上で10秒間のフィーバーモード突入！",
                 "フィーバー中は←→キーで移動、自動ビーム攻撃！",
-                "20体逃すとゲームオーバーになります。",
+                "20体逃すとゲームオーバーになります。"
             ]
 
             for i, line in enumerate(rules):
-                draw_text(screen, line, screen.get_width() // 2, 100 + i * 40, font, (255, 255, 255), center=True)
+                draw_text(screen, line, screen.get_width() // 2, 100 + i * 40, font, center=True)
 
             draw_text(screen, "スペースキーでゲーム開始！", screen.get_width() // 2, 300, font, (255, 255, 0), center=True)
 
